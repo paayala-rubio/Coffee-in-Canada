@@ -1,0 +1,45 @@
+!pip install requests beautifulsoup4 pandas
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from tqdm import tqdm
+
+import time
+import random
+
+time.sleep(random.uniform(1, 3))  # 1–3 second delay
+
+# Scraping of Multiple Pages
+reviews_data = []
+
+for page in tqdm(range(1, 218), desc="Scraping pages"):
+    url = f'https://www.walmart.ca/en/reviews/product/6000199413869?entryPoint=viewAllReviewsBottom&page={page}.html'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    reviews = soup.find_all('div', class_='overflow-visible b--none mt4-l ma0 dark-gray')
+
+    for review in reviews:
+        date = review.find('div', class_='f7 gray flex flex-auto flex-none-l tr tl-l justify-end justify-start-l')
+        user = review.find('span', class_='f7 b mv0')
+        details = review.find('span', class_='tl-m db-m')
+        stars = review.find('span', class_='w_q67L')
+        title = review.find('span', class_='w_vi_D')
+        user_type = review.find('span', class_='b f7 dark-gray')
+
+        reviews_data.append({
+            'Review_Date': date.text.strip() if date else None,
+            'User_Name': user.text.strip() if user else None,
+            'User_Type': user_type.text.strip() if user_type else None,
+            'Stars' : stars.text.strip() if stars else None,
+            'Title' : title.text.strip() if title else None,
+            'Details': details.text.strip() if details else None
+        })
+
+
+df_all = pd.DataFrame(reviews_data)
+print(df_all.head())
+
+
+# Save dataframe to CSV
+df_all.to_csv('reviews_data_Tim.csv', index=False)
